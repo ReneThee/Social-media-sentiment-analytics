@@ -91,7 +91,54 @@ def analyze(df: pd.DataFrame) -> dict:
         print(f"\n===== {name} =====\n{table}")
     return results
 
+def make_visuals(df: pd.DataFrame, results: dict) -> None:
+    """Saving the portfolio charts to visuals/ as PNG files."""
+    import os
+    os.makedirs(VISUALS_DIR, exist_ok=True)
+
+    def save(fig, name):
+        path = f"{VISUALS_DIR}/{name}.png"
+        fig.savefig(path, dpi=150, bbox_inches="tight")
+        plt.close(fig)
+        print("Saved", path)
+
+    # Average engagement by platform
+    fig, ax = plt.subplots(figsize=(8, 5))
+    results["engagement_by_platform"].plot(kind="bar", ax=ax, color="#2a6f97")
+    ax.set_title("Average Engagement per Post by Platform")
+    ax.set_ylabel("Likes + Retweets (mean)")
+    ax.set_xlabel("")
+    save(fig, "engagement_by_platform")
+
+    # Sentiment mix by platform (stacked)
+    fig, ax = plt.subplots(figsize=(8, 5))
+    results["sentiment_mix"].plot(kind="bar", stacked=True, ax=ax,
+                                  color=["#c1121f", "#adb5bd", "#2d6a4f"])
+    ax.set_title("Sentiment Mix by Platform (%)")
+    ax.set_ylabel("Share of posts (%)")
+    ax.set_xlabel("")
+    ax.legend(title="")
+    save(fig, "sentiment_mix_by_platform")
+
+    # Engagement by hour of day (time-based analysis)
+    fig, ax = plt.subplots(figsize=(9, 4.5))
+    results["engagement_by_hour"].plot(ax=ax, marker="o", color="#2a6f97")
+    ax.set_title("Average Engagement by Hour of Day")
+    ax.set_xlabel("Hour (0-23)")
+    ax.set_ylabel("Mean engagement")
+    save(fig, "engagement_by_hour")
+
+    # Monthly post volume by sentiment group (trend over time)
+    fig, ax = plt.subplots(figsize=(10, 4.5))
+    results["monthly_sentiment"].plot(ax=ax)
+    ax.set_title("Post Volume by Sentiment Group Over Time")
+    ax.set_xlabel("")
+    ax.set_ylabel("Posts")
+    ax.legend(title="")
+    save(fig, "monthly_sentiment_trend")
+
 if __name__ == "__main__":
     df = load_and_clean()
     df = add_derived_metrics(df)
     results = analyze(df)
+    make_visuals(df, results)
