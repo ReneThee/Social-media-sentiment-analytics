@@ -61,7 +61,37 @@ def add_derived_metrics(df: pd.DataFrame) -> pd.DataFrame:
     print("Sentiment groups:\n", df["sentiment_group"].value_counts())
     return df
 
+def analyze(df: pd.DataFrame) -> dict:
+    
+    results = {}
+
+    # Q1: Which platform generates the most engagement per post?
+    results["engagement_by_platform"] = (
+        df.groupby("Platform")["engagement"].mean().sort_values(ascending=False)
+    )
+
+    # Q2: How does sentiment mix differ by platform?
+    results["sentiment_mix"] = (
+        pd.crosstab(df["Platform"], df["sentiment_group"], normalize="index")
+        .round(3) * 100
+    )
+
+    # Q3: When are posts most engaging? (time-based analysis)
+    results["engagement_by_hour"] = df.groupby("hour")["engagement"].mean()
+    results["engagement_by_dow"] = (
+        df.groupby("day_of_week")["engagement"].mean()
+        .reindex(["Monday", "Tuesday", "Wednesday", "Thursday",
+                  "Friday", "Saturday", "Sunday"])
+    )
+    results["monthly_sentiment"] = (
+        df.groupby(["month", "sentiment_group"]).size().unstack(fill_value=0)
+    )
+
+    for name, table in results.items():
+        print(f"\n===== {name} =====\n{table}")
+    return results
+
 if __name__ == "__main__":
     df = load_and_clean()
     df = add_derived_metrics(df)
-    print(df[["Platform", "sentiment_group", "engagement", "hour"]].head())
+    results = analyze(df)
